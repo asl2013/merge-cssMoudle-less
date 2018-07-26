@@ -1,39 +1,29 @@
-#!/usr/bin/env node
-/**
- * 这个方法用来处理 css-modlue
- * 由于没有开源插件，所以自己撸了一个
- */
-
 const fs = require('fs');
 const path = require('path');
 const getLocalIdentName = require('./getLocalIdentName');
 const AddlocalIdentName = require('./AddlocalIdentName');
-const replacedefaultLess = require('./replacedefaultLess');
+const replaceDefaultLess = require('./replaceDefaultLess');
 
-const loopAllLess = (parents,lessArray) => {
-  const paths = fs.readdirSync(parents);
+const readLessFiles = (dirs,lessArray) => {
+  if(typeof(dirs) == 'string'){
+    dirs = [dirs];
+  }
+  dirs = dirs || [];
   const promiseList = [];
-  paths.forEach(itemPath => {
-    if (itemPath === 'style' || itemPath === 'demo') {
-      return;
-    }
-    // file status
-    const fileStatus = fs.lstatSync(path.join(parents, itemPath));
-    // is file
-    // is Directory
-    if (fileStatus.isDirectory()) {
-      return loopAllLess(path.join(parents, itemPath),lessArray);
-    }
-    // is less file
-    if (itemPath.indexOf('.less') > -1) {
-      const relaPath = path.join(parents, itemPath);
-      // post css add localIdentNameplugin
-      const fileContent = replacedefaultLess(relaPath);
-      // push less file
+  dirs.forEach(dir => {
+    const status = fs.lstatSync(dir);
+    if(status.isDirectory()){
+      let childPaths = fs.readdirSync(dir);
+      childPaths = childPaths.forEach(childPath => {
+        return path.join(dir,childPath);
+      });
+      promiseList.push(readLessFiles(childPaths,lessArray));
+    }else if (dir.indexOf('.less') > -1) {
+      const fileContent = replaceDefaultLess(dir);
       promiseList.push(
-        AddlocalIdentName(relaPath, fileContent, getLocalIdentName(relaPath)).then(result => {
-          lessArray.push(result);
-        })
+          AddlocalIdentName(dir, fileContent, getLocalIdentName(dir)).then(result => {
+            lessArray.push(result);
+          })
       );
     }
   });
@@ -42,11 +32,11 @@ const loopAllLess = (parents,lessArray) => {
 
 class mergeLessPlugin {
   constructor(options) {
-    const defaulOptions = {
+    const defaultOptions = {
       stylesDir: path.join(__dirname, './src/'),
-      outFile: path.join(__dirname, './tmp/ant.design.pro.less'),
+      outFile: path.join(__dirname, './tmp/merge-less.less'),
     };
-    this.options = Object.assign(defaulOptions, options);
+    this.options = Object.assign(defaultOptions, options);
     this.generated = false;
   }
 
@@ -54,16 +44,15 @@ class mergeLessPlugin {
     const { options } = this;
     compiler.plugin('emit', (compilation, callback) => {
       const { outFile } = options;
-      const lessArray = ['@import "../node_modules/antd/lib/style/themes/default.less";'];
-      // covert less
+      let lessArray = ['@import "../node_modules/antd/lib/style/themes/default.less";'];
       if (fs.existsSync(outFile)) {
         fs.unlinkSync(outFile);
       } else if (!fs.existsSync(path.dirname(outFile))) {
         fs.mkdirSync(path.dirname(outFile));
       }
-      loopAllLess(options.stylesDir,lessArray).then(() => {
-        fs.writeFileSync(outFile, lessArray.join('\n'));
-        callback();
+      readLessFiles(options.stylesDir,lessArray).then(() => {
+          fs.writeFileSync(outFile, lessArray.join('\n'));
+          callback();
       });
     });
   }

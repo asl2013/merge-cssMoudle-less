@@ -1,6 +1,6 @@
 const fs = require('fs-extra');
 
-const replacedefaultLess = lessPath => {
+const replaceDefaultLess = lessPath => {
   const fileContent = fs.readFileSync(lessPath).toString();
   let lessString = fileContent;
   if (lessString.includes("@import '~antd/lib/style/themes/default.less'")) {
@@ -8,4 +8,4 @@ const replacedefaultLess = lessPath => {
   }
   return lessString.replace(/@import '.*\/utils.less';/, '');
 };
-module.exports = replacedefaultLess;
+module.exports = replaceDefaultLess;
