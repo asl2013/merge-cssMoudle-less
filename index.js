@@ -10,7 +10,7 @@ const getLocalIdentName = require('./getLocalIdentName');
 const AddlocalIdentName = require('./AddlocalIdentName');
 const replacedefaultLess = require('./replacedefaultLess');
 // read less file list
-const lessArray = ['@import "../node_modules/antd/lib/style/themes/default.less";'];
+let lessArray = ['@import "../node_modules/antd/lib/style/themes/default.less";'];
 
 const loopAllLess = parents => {
   const paths = fs.readdirSync(parents);
@@ -56,6 +56,7 @@ class mergeLessPlugin {
     const { options } = this;
     compiler.plugin('emit', (compilation, callback) => {
       const { outFile } = options;
+      lessArray = ['@import "../node_modules/antd/lib/style/themes/default.less";'];
       // covert less
       if (fs.existsSync(outFile)) {
         fs.unlinkSync(outFile);
