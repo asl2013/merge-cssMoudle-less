@@ -9,10 +9,8 @@ const path = require('path');
 const getLocalIdentName = require('./getLocalIdentName');
 const AddlocalIdentName = require('./AddlocalIdentName');
 const replacedefaultLess = require('./replacedefaultLess');
-// read less file list
-let lessArray = ['@import "../node_modules/antd/lib/style/themes/default.less";'];
 
-const loopAllLess = parents => {
+const loopAllLess = (parents,lessArray) => {
   const paths = fs.readdirSync(parents);
   const promiseList = [];
   paths.forEach(itemPath => {
@@ -24,7 +22,7 @@ const loopAllLess = parents => {
     // is file
     // is Directory
     if (fileStatus.isDirectory()) {
-      return loopAllLess(path.join(parents, itemPath));
+      return loopAllLess(path.join(parents, itemPath),lessArray);
     }
     // is less file
     if (itemPath.indexOf('.less') > -1) {
@@ -56,14 +54,14 @@ class mergeLessPlugin {
     const { options } = this;
     compiler.plugin('emit', (compilation, callback) => {
       const { outFile } = options;
-      lessArray = ['@import "../node_modules/antd/lib/style/themes/default.less";'];
+      const lessArray = ['@import "../node_modules/antd/lib/style/themes/default.less";'];
       // covert less
       if (fs.existsSync(outFile)) {
         fs.unlinkSync(outFile);
       } else if (!fs.existsSync(path.dirname(outFile))) {
         fs.mkdirSync(path.dirname(outFile));
       }
-      loopAllLess(options.stylesDir).then(() => {
+      loopAllLess(options.stylesDir,lessArray).then(() => {
         fs.writeFileSync(outFile, lessArray.join('\n'));
         callback();
       });
