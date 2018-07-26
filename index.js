@@ -19,6 +19,7 @@ const readLessFiles = (dirs,lessArray) => {
       });
       promiseList.push(readLessFiles(childPaths,lessArray));
     }else if (dir.indexOf('.less') > -1) {
+      console.info(dir);
       const fileContent = replaceDefaultLess(dir);
       promiseList.push(
           AddlocalIdentName(dir, fileContent, getLocalIdentName(dir)).then(result => {
@@ -51,6 +52,7 @@ class mergeLessPlugin {
         fs.mkdirSync(path.dirname(outFile));
       }
       readLessFiles(options.stylesDir,lessArray).then(() => {
+        console.info('----------------------done');
           fs.writeFileSync(outFile, lessArray.join('\n'));
           callback();
       });
