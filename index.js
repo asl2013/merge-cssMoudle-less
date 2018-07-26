@@ -14,7 +14,7 @@ const readLessFiles = (dirs,lessArray) => {
     const status = fs.lstatSync(dir);
     if(status.isDirectory()){
       let childPaths = fs.readdirSync(dir);
-      childPaths = childPaths.forEach(childPath => {
+      childPaths = childPaths.map((childPath,index) => {
         return path.join(dir,childPath);
       });
       promiseList.push(readLessFiles(childPaths,lessArray));
